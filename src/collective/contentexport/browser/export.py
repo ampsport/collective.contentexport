@@ -16,6 +16,7 @@ from plone.namedfile.interfaces import INamedImageField
 from tempfile import NamedTemporaryFile
 from z3c.relationfield.interfaces import IRelationChoice, IRelationList
 from zope.i18n import translate
+from zope.schema.interfaces import ICollection
 from zope.schema.interfaces import IDate
 from zope.schema.interfaces import IDatetime
 import base64
@@ -290,6 +291,13 @@ class ExportView(BrowserView):
                 if INamed.providedBy(value):
                     value = get_blob_url(value, brain, blob_format, fieldname)
 
+                if ICollection.providedBy(field):
+                    r = []
+                    for v in value:
+                        if INamed.providedBy(v):
+                            r.append(base64.b64encode(v.data))
+                    value = r
+
                 if IDatetime.providedBy(field) or IDate.providedBy(field):
                     value = api.portal.get_localized_time(
                         value, long_format=True)
@@ -299,6 +307,7 @@ class ExportView(BrowserView):
 
                 if isinstance(value, list) or isinstance(value, tuple):
                     value = pretty_join(value)
+
 
                 item_dict[fieldname] = value
 
@@ -311,22 +320,39 @@ class ExportView(BrowserView):
     def export_blobs(self, portal_type, blob_type, blacklist, whitelist):
         """Return a zip-file with file and/or images  for the required export.
         """
+
         all_fields = get_schema_info(portal_type, blacklist, whitelist)
         if blob_type == 'images':
-            fields = [
-                i for i in all_fields if
-                INamedImageField.providedBy(i[1]) or
-                INamedBlobImageField.providedBy(i[1])]
+            fields = []
+            for i in all_fields:
+
+                if INamedImageField.providedBy(i[1]):
+                    fields.append(i)
+                elif INamedBlobImageField.providedBy(i[1]):
+                    fields.append(i)
+                elif ICollection.providedBy(i[1]):
+                    if INamedImageField.providedBy(i[1].value_type) or INamedBlobImageField.providedBy(i[1].value_type):
+                        fields.append(i)
+
         elif blob_type == 'files':
-            fields = [
-                i for i in all_fields if
-                INamedFileField.providedBy(i[1]) or
-                INamedBlobFileField.providedBy(i[1])]
+            fields = []
+            for i in all_fields:
+                if INamedFileField.providedBy(i[1]):
+                    fields.append(i)
+                elif INamedBlobFileField.providedBy(i[1]):
+                    fields.append(i)
+                elif ICollection.providedBy(i[1]):
+                    if INamedFileField.providedBy(i[1].value_type) or INamedBlobFileField.providedBy(i[1].value_type):
+                        fields.append(i)
+
+
         elif blob_type == 'related':
             fields = [
                 i for i in all_fields if
                 IRelationChoice.providedBy(i[1]) or
                 IRelationList.providedBy(i[1])]
+
+        import pdb; pdb.set_trace( )
 
         tmp_file = NamedTemporaryFile()
         zip_file = zipfile.ZipFile(tmp_file, 'w')
@@ -347,11 +373,14 @@ class ExportView(BrowserView):
                 if not value:
                     continue
 
-                if blob_type != 'related':
+                if ICollection.providedBy(field):
+                    blobs = value
+                elif blob_type != 'related':
                     blobs = [value]
                 elif IRelationChoice.providedBy(field) or \
                         IRelationList.providedBy(field):
                     blobs = get_blobs_from_relations(value, field)
+
 
                 for blob in blobs:
                     if not blob:
