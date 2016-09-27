@@ -345,14 +345,11 @@ class ExportView(BrowserView):
                     if INamedFileField.providedBy(i[1].value_type) or INamedBlobFileField.providedBy(i[1].value_type):
                         fields.append(i)
 
-
         elif blob_type == 'related':
             fields = [
                 i for i in all_fields if
                 IRelationChoice.providedBy(i[1]) or
                 IRelationList.providedBy(i[1])]
-
-        import pdb; pdb.set_trace( )
 
         tmp_file = NamedTemporaryFile()
         zip_file = zipfile.ZipFile(tmp_file, 'w')
