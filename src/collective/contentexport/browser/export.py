@@ -297,7 +297,7 @@ class ExportView(BrowserView):
                         if INamed.providedBy(v):
                             r.append(base64.b64encode(v.data))
                         else:
-                            r.append(value)
+                            r.append(v)
                     value = r
 
                 if IDatetime.providedBy(field) or IDate.providedBy(field):
