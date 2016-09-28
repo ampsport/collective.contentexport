@@ -66,6 +66,13 @@ def _path(obj):
 def _review_state(obj):
     return api.content.get_state(obj, default=None)
 
+
+def _allowed_roles_and_users(obj):
+    from Products.CMFPlone.CatalogTool import allowedRolesAndUsers
+    result = allowedRolesAndUsers(obj)()
+    return ','.join(result) or None
+
+
 # This is a dict of headername and method to get additional useful date
 # from the objects. This can also be used to override the getters fields with
 # the same name to use custom methods to get data.
