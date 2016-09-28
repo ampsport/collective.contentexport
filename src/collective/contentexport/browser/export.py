@@ -306,7 +306,7 @@ class ExportView(BrowserView):
                 'Language' in catalog.indexes():
             query['Language'] = 'all'
 
-        brains = catalog(query)
+        brains = catalog.unrestrictedSearchResults(query)
         for brain in brains:
             obj = brain.getObject()
             item_dict = dict()
@@ -463,7 +463,7 @@ class ExportView(BrowserView):
         for fti in portal_types.listTypeInfo():
             if not IDexterityFTI.providedBy(fti):
                 continue
-            number = len(catalog(portal_type=fti.id))
+            number = len(catalog.unrestrictedSearchResults(portal_type=fti.id))
             if number >= 1:
                 results.append({
                     'number': number,
