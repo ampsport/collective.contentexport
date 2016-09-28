@@ -73,6 +73,41 @@ def _allowed_roles_and_users(obj):
     return ','.join(result) or None
 
 
+def _post_file(obj):
+    from amp.eventfeed.content.post import IFileAttachment
+    try:
+        post = IFileAttachment(obj)
+    except TypeError:
+        return None
+    else:
+        value = getattr(post, 'file', None)
+        if value:
+            value = u'{0}/@@download/{1}'.format(obj.absolute_url(), 'file')
+        return value
+
+
+def _post_link(obj):
+    from amp.eventfeed.content.post import ILinkAttachment
+    try:
+        post = ILinkAttachment(obj)
+    except TypeError:
+        return None
+    else:
+        return getattr(post, 'link_url', None)
+
+
+def _post_image(obj):
+    from amp.eventfeed.content.post import IImageAttachment
+    try:
+        post = IImageAttachment(obj)
+    except TypeError:
+        return None
+    else:
+        value = getattr(post, 'image', None)
+        if value:
+            value = u'{0}/@@download/{1}'.format(obj.absolute_url(), 'image')
+        return value
+
 # This is a dict of headername and method to get additional useful date
 # from the objects. This can also be used to override the getters fields with
 # the same name to use custom methods to get data.
@@ -158,7 +193,13 @@ class ExportView(BrowserView):
             'uid': _uid,
             'path': _path,
             'review_state': _review_state,
+            'allowed_roles_and_users': _allowed_roles_and_users,
         }
+
+        if portal_type == 'post':
+            self.ADDITIONAL_MAPPING['file'] = _post_file
+            self.ADDITIONAL_MAPPING['link_url'] = _post_link
+            self.ADDITIONAL_MAPPING['image'] = _post_image
 
         if not blacklist:
             blacklist = []
