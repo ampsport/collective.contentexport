@@ -317,7 +317,12 @@ class ExportView(BrowserView):
                     # overridden in ADDITIONAL_MAPPING
                     continue
 
-                value = field.get(field.interface(obj))
+                try:
+                    value = field.get(field.interface(obj))
+                except:
+                    print("Skipping object at {0}".format(obj.absolute_url()))
+                    break
+
                 if not value:
                     # set a value anyway to keep the dimensions of all
                     value = ''
@@ -360,11 +365,13 @@ class ExportView(BrowserView):
 
 
                 item_dict[fieldname] = value
+            else:
+                # Update the data with additional info or overridden getters
+                item_dict.update(self.additional_data(obj, blacklist))
 
-            # Update the data with additional info or overridden getters
-            item_dict.update(self.additional_data(obj, blacklist))
-
-            results.append(item_dict)
+                results.append(item_dict)
+                continue  # executed if the loop ended normally (no break)
+            break  # executed if 'continue' was skipped (break)
         return results
 
     def export_blobs(self, portal_type, blob_type, blacklist, whitelist):
