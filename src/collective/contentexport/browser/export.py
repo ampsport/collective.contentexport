@@ -380,12 +380,15 @@ class ExportView(BrowserView):
                     value = r
 
                 if IDatetime.providedBy(field) or IDate.providedBy(field):
-                    if IDate.providedBy(field) and value.year < 1000:
+                    if value.year < 1000:
                         if value.year < 16:
                             year = value.year + 2000
                         else:
                             year = value.year + 1900
-                        value = datetime.date(month=value.month, day=value.day, year=year)
+                        if IDate.providedBy(field):
+                            value = datetime.date(month=value.month, day=value.day, year=year)
+                        elif IDatetime.providedBy(field):
+                            value = datetime.datetime(month=value.month, day=value.day, year=year, hour=value.hour, minute=value.minute, second=value.second)
                     value = api.portal.get_localized_time(
                         value, long_format=True)
 
