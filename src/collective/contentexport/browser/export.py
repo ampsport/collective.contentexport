@@ -20,6 +20,7 @@ from zope.schema.interfaces import ICollection
 from zope.schema.interfaces import IDate
 from zope.schema.interfaces import IDatetime
 import base64
+import datetime
 import json
 import logging
 import pkg_resources
@@ -379,6 +380,12 @@ class ExportView(BrowserView):
                     value = r
 
                 if IDatetime.providedBy(field) or IDate.providedBy(field):
+                    if IDate.providedBy(field) and value.year < 1000:
+                        if value.year < 16:
+                            year = value.year + 2000
+                        else:
+                            year = value.year + 1900
+                        value = datetime.date(month=value.month, day=value.day, year=year)
                     value = api.portal.get_localized_time(
                         value, long_format=True)
 
