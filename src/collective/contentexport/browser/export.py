@@ -108,6 +108,25 @@ def _post_image(obj):
             value = u'{0}/@@download/{1}'.format(obj.absolute_url(), 'image')
         return value
 
+
+def _comments(obj):
+    from plone.app.discussion.interfaces import IConversation
+    conversation = IConversation(obj)
+    comments = []
+
+    for c in conversation.getComments():
+        comments.append({'author_username': c.author_username,
+                         'text': c.text,
+                         'comment_id': c.comment_id,
+                         'creation_date': api.portal.get_localized_time(c.creation_date, long_format=True)})
+    return comments
+
+
+def _athleteTags(obj):
+    tags = getattr(obj, 'athleteTags', [])
+    return list(tags)
+
+
 # This is a dict of headername and method to get additional useful date
 # from the objects. This can also be used to override the getters fields with
 # the same name to use custom methods to get data.
@@ -194,6 +213,8 @@ class ExportView(BrowserView):
             'path': _path,
             'review_state': _review_state,
             'allowed_roles_and_users': _allowed_roles_and_users,
+            'comments': _comments,
+            'athleteTags': _athleteTags
         }
 
         if portal_type == 'post':
@@ -267,7 +288,10 @@ class ExportView(BrowserView):
             return dataset.html
 
         if export_type == 'json':
-            pretty = json.dumps(data, sort_keys=True, indent=4)
+            try:
+                pretty = json.dumps(data, sort_keys=True, indent=4)
+            except:
+                import pdb; pdb.set_trace( )
             self.request.response.setHeader('Content-type', 'application/json')
             return pretty
 
@@ -348,7 +372,8 @@ class ExportView(BrowserView):
                     r = []
                     for v in value:
                         if INamed.providedBy(v):
-                            r.append(base64.b64encode(v.data))
+                            r.append(u'{0}/@@download/{1}'.format(obj.absolute_url(), fieldname))
+                            # r.append(base64.b64encode(v.data))
                         else:
                             r.append(v)
                     value = r
